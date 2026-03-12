@@ -23,6 +23,8 @@ Open http://localhost:5173 → sign in or use **Continue as demo user**.
 
 Without Supabase you can still use **Continue as demo user** (data in localStorage only).
 
+**Demo flow:** Demo user gets a predefined brand **Acme CRM** (industry: SaaS / CRM, competitors: Salesforce, HubSpot, Zoho) and predefined prompts + personas so you can run conversations immediately.
+
 ## Build
 
 ```bash
@@ -38,10 +40,12 @@ Output in `dist/`.
 - **Prompt Library** — Add up to 10 active prompts; card list with status and run count.
 - **Brief Editor** — Per-prompt context brief. Open via prompt card → brief icon.
 - **Persona Builder** — Create personas (role, tone, traits) for runs.
-- **Conversation Runner** — Select prompt + persona, run (mock ~1.5s), see conversation cards (running → completed).
+- **Conversation Runner** — Select prompt + persona, run with **real OpenAI** (or mock if no API key). Response is analyzed for **brand mention** (your brand name in the reply) and **sentiment** (positive/neutral/negative). Results feed the Analytics dashboard.
 - **Analytics Dashboard** — Brand mention rate, share of voice, sentiment, top prompts.
 
 Data: prompts/personas/runs per user in `localStorage` (keyed by user id). Brand profile in Supabase or in-memory for demo.
+
+**Real AI (optional):** Set `VITE_OPENAI_API_KEY` in `.env` to use OpenAI for conversation runs. The app detects whether your brand name appears in the AI response and infers sentiment; analytics use this data. Without the key, runs use built-in mock responses (brand mention and sentiment still computed for demo).
 
 ## Stack
 

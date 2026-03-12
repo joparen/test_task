@@ -10,6 +10,7 @@ import {
 import { supabase } from '../lib/supabase'
 import type { BrandProfile } from '../types'
 import type { Session } from '@supabase/supabase-js'
+import { DEMO_USER_ID } from '../constants'
 
 export interface AuthUser {
   id: string
@@ -31,13 +32,12 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-const DEMO_USER_ID = 'demo-user'
 const DEMO_PROFILE: BrandProfile = {
   id: 'demo-profile',
   user_id: DEMO_USER_ID,
-  brand_name: 'Demo Brand',
-  competitors: '',
-  industry: '',
+  brand_name: 'Acme CRM',
+  competitors: 'Salesforce, HubSpot, Zoho',
+  industry: 'SaaS / CRM',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }

@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react'
 import { Play, Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { useAuth } from '../context/AuthContext'
 import { EmptyState } from '../components/EmptyState'
 import { Tooltip } from '../components/Tooltip'
+import { runConversationWithAI, isAIConfigured } from '../lib/ai'
 import { MAX_ACTIVE_PROMPTS } from '../constants'
-
-const MOCK_RUN_DELAY_MS = 1500
 
 export function ConversationRunner() {
   const {
@@ -19,32 +19,42 @@ export function ConversationRunner() {
     canStartNewRun,
     activePromptCount,
   } = useApp()
+  const { profile } = useAuth()
 
   const [promptId, setPromptId] = useState('')
   const [personaId, setPersonaId] = useState('')
+  const [error, setError] = useState('')
 
   const activePrompts = prompts.filter((p) => p.status === 'active' || p.status === 'running')
+  const brandName = profile?.brand_name?.trim() ?? ''
 
-  const runMock = useCallback(
-    (runId: string) => {
-      setTimeout(() => {
-        const brandMentioned = Math.random() > 0.5
-        completeRun(runId, {
-          brandMentioned,
-          sentiment: brandMentioned ? 'positive' : 'neutral',
-          rawResponse: 'Mock AI response for demo.',
-        })
-      }, MOCK_RUN_DELAY_MS)
-    },
-    [completeRun]
-  )
-
-  const handleStartRun = () => {
+  const handleStartRun = useCallback(async () => {
     if (!promptId || !personaId) return
+    const prompt = prompts.find((p) => p.id === promptId)
+    const persona = personas.find((p) => p.id === personaId)
     const brief = getBrief(promptId)
+    if (!prompt || !persona) return
+
+    setError('')
     const run = startRun(promptId, personaId, brief?.id)
-    runMock(run.id)
-  }
+
+    try {
+      const result = await runConversationWithAI({
+        promptTitle: prompt.title,
+        briefBody: brief?.body ?? '',
+        persona,
+        brandName,
+      })
+      completeRun(run.id, {
+        brandMentioned: result.brandMentioned,
+        sentiment: result.sentiment,
+        rawResponse: result.rawResponse,
+      })
+    } catch (err) {
+      failRun(run.id)
+      setError(err instanceof Error ? err.message : 'Run failed')
+    }
+  }, [promptId, personaId, prompts, personas, getBrief, brandName, startRun, completeRun, failRun])
 
   const atActiveLimit = activePromptCount >= MAX_ACTIVE_PROMPTS
   const canRun =
@@ -96,8 +106,13 @@ export function ConversationRunner() {
         Conversation Runner
       </h1>
       <p className="mt-1 text-sm text-gray-500">
-        Start a run with a prompt and persona. Max {MAX_ACTIVE_PROMPTS} runs at once.
+        Start a run with a prompt and persona. {isAIConfigured() ? 'Using OpenAI for real responses and brand analytics.' : 'Using demo mode (set VITE_OPENAI_API_KEY for real AI).'} Max {MAX_ACTIVE_PROMPTS} runs at once.
       </p>
+      {error && (
+        <p className="mt-2 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
 
       <div className="mt-6 card max-w-2xl">
         <h2 className="font-display text-sm font-medium text-gray-900">New run</h2>
@@ -179,10 +194,20 @@ export function ConversationRunner() {
                     </div>
                   </div>
                   {run.status === 'completed' && run.result && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Brand mentioned: {run.result.brandMentioned ? 'Yes' : 'No'}
-                      {run.result.sentiment && ` · ${run.result.sentiment}`}
-                    </p>
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-gray-500">
+                        Brand mentioned: {run.result.brandMentioned ? 'Yes' : 'No'}
+                        {run.result.sentiment && ` · ${run.result.sentiment}`}
+                      </p>
+                      {run.result.rawResponse && (
+                        <p className="text-xs text-gray-600 line-clamp-3" title={run.result.rawResponse}>
+                          {run.result.rawResponse}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  {run.status === 'failed' && (
+                    <p className="mt-2 text-xs text-red-500">Run failed</p>
                   )}
                 </li>
               )
