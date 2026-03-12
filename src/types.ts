@@ -49,3 +49,13 @@ export interface StoredState {
   personas: Persona[]
   runs: Run[]
 }
+
+export interface BrandProfile {
+  id: string
+  user_id: string
+  brand_name: string
+  competitors?: string
+  industry?: string
+  created_at: string
+  updated_at: string
+}

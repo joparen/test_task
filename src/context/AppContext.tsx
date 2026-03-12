@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -9,6 +10,7 @@ import {
 import { loadState, saveState } from '../storage'
 import { MAX_ACTIVE_PROMPTS } from '../constants'
 import type { Brief, Persona, Prompt, Run, RunResult, StoredState } from '../types'
+import { useAuth } from './AuthContext'
 
 interface AppContextValue extends StoredState {
   addPrompt: (title: string) => Prompt
@@ -29,17 +31,30 @@ interface AppContextValue extends StoredState {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
-function persist(state: StoredState): void {
-  saveState(state)
+const defaultState: StoredState = {
+  prompts: [],
+  briefs: [],
+  personas: [],
+  runs: [],
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<StoredState>(loadState)
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const [state, setState] = useState<StoredState>(() => loadState(userId))
 
-  const persistState = useCallback((next: StoredState) => {
-    setState(next)
-    persist(next)
-  }, [])
+  useEffect(() => {
+    setState(loadState(userId))
+  }, [userId])
+
+  const persistState = useCallback(
+    (next: StoredState) => {
+      setState(next)
+      saveState(userId, next)
+    },
+    [userId]
+  )
+
 
   const addPrompt = useCallback(
     (title: string): Prompt => {
@@ -76,11 +91,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (patch.title !== undefined) updated.title = patch.title.trim()
         next.prompts = [...next.prompts]
         next.prompts[idx] = updated
-        persist(next)
+        saveState(userId, next)
         return next
       })
     },
-    []
+    [userId]
   )
 
   const deletePrompt = useCallback(

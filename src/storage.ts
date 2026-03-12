@@ -1,5 +1,5 @@
 import type { StoredState } from './types'
-import { STORAGE_KEY } from './constants'
+import { getStorageKey } from './constants'
 
 const defaultState: StoredState = {
   prompts: [],
@@ -8,9 +8,11 @@ const defaultState: StoredState = {
   runs: [],
 }
 
-export function loadState(): StoredState {
+export function loadState(userId: string | null): StoredState {
+  if (!userId) return defaultState
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const key = getStorageKey(userId)
+    const raw = localStorage.getItem(key)
     if (!raw) return defaultState
     const parsed = JSON.parse(raw) as StoredState
     return {
@@ -24,9 +26,10 @@ export function loadState(): StoredState {
   }
 }
 
-export function saveState(state: StoredState): void {
+export function saveState(userId: string | null, state: StoredState): void {
+  if (!userId) return
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(state))
   } catch {
     // ignore
   }
