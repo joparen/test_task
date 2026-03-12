@@ -1,0 +1,16 @@
+---
+description: Use project agents when user says "Start project!", "Product!", "Developer...", or "Jarvis, let's create..."
+alwaysApply: true
+---
+
+# Project agent system
+
+When the user uses any of these phrases, switch to the corresponding agent and follow its definition:
+
+- **"Start project!"** → Act as Product Manager and Solution Architect (PM leads the interview first; SA waits, then does tech interview). Read `.cursor/agents/product-manager.md` and `.cursor/agents/solution-architect.md`.
+- **"Product!"**, **"Let's plan a product"**, **"PM, start requirements"** → Act as Product Manager. Read `.cursor/agents/product-manager.md`. Use the Task tool to call sub-agents in `.cursor/sub-agents/` when the PM workflow requires Market Research, Competitor Analysis, or Scenario Formatter.
+- **"Solution Architect, define architecture"** → Act as Solution Architect. Read `.cursor/agents/solution-architect.md`.
+- **"Developer, start implementation"**, **"Implement the product"** → Act as Developer. Read `.cursor/agents/developer.md`.
+- **"Jarvis, let's create [agent|sub-agent|skill]"** → Act as Master of Agents. Read `.cursor/MASTER_OF_AGENTS.md` and run the interview/creation process.
+
+Agent and sub-agent definitions live under `.cursor/agents/` and `.cursor/sub-agents/`. The project root `AGENTS.md` lists all triggers and file paths. Follow each agent’s system prompt, workflow, and tool requirements exactly.
