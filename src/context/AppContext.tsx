@@ -190,43 +190,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const completeRun = useCallback(
     (runId: string, result: RunResult) => {
       const now = new Date().toISOString()
-      const runs = state.runs.map((r) =>
-        r.id === runId ? { ...r, status: 'completed' as const, completedAt: now, result } : r
-      )
-      const run = runs.find((r) => r.id === runId)
-      const prompts = state.prompts.map((p) => {
-        if (run && p.id === run.promptId) {
-          const stillRunning = runs.some((r) => r.promptId === p.id && r.status === 'running')
-          return {
-            ...p,
-            status: stillRunning ? ('running' as const) : ('active' as const),
-            runCount: p.runCount + 1,
+      setState((prev) => {
+        const runs = prev.runs.map((r) =>
+          r.id === runId ? { ...r, status: 'completed' as const, completedAt: now, result } : r
+        )
+        const run = runs.find((r) => r.id === runId)
+        const prompts = prev.prompts.map((p) => {
+          if (run && p.id === run.promptId) {
+            const stillRunning = runs.some((r) => r.promptId === p.id && r.status === 'running')
+            return {
+              ...p,
+              status: stillRunning ? ('running' as const) : ('active' as const),
+              runCount: p.runCount + 1,
+            }
           }
-        }
-        return p
+          return p
+        })
+        const next = { ...prev, runs, prompts }
+        saveState(userId, next)
+        return next
       })
-      persistState({ ...state, runs, prompts })
     },
-    [state, persistState]
+    [userId]
   )
 
   const failRun = useCallback(
     (runId: string) => {
       const now = new Date().toISOString()
-      const runs = state.runs.map((r) =>
-        r.id === runId ? { ...r, status: 'failed' as const, completedAt: now } : r
-      )
-      const run = runs.find((r) => r.id === runId)
-      const prompts = state.prompts.map((p) => {
-        if (run && p.id === run.promptId) {
-          const stillRunning = runs.some((r) => r.promptId === p.id && r.status === 'running')
-          return { ...p, status: stillRunning ? ('running' as const) : ('active' as const) }
-        }
-        return p
+      setState((prev) => {
+        const runs = prev.runs.map((r) =>
+          r.id === runId ? { ...r, status: 'failed' as const, completedAt: now } : r
+        )
+        const run = runs.find((r) => r.id === runId)
+        const prompts = prev.prompts.map((p) => {
+          if (run && p.id === run.promptId) {
+            const stillRunning = runs.some((r) => r.promptId === p.id && r.status === 'running')
+            return { ...p, status: stillRunning ? ('running' as const) : ('active' as const) }
+          }
+          return p
+        })
+        const next = { ...prev, runs, prompts }
+        saveState(userId, next)
+        return next
       })
-      persistState({ ...state, runs, prompts })
     },
-    [state, persistState]
+    [userId]
   )
 
   const activePromptCount = useMemo(
